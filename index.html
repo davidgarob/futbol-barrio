@@ -10,11 +10,23 @@
   <!-- Pantallas -->
   <div id="screen-setup"></div>
   <div id="screen-draft" style="display:none;"></div>
-  <div id="screen-club" style="display:none;"></div>
+  <!-- Tabs contenedor (solo visible tras el draft) -->
+<div id="tabs-root" style="display:none;">
+  <nav id="tabs-nav">
+    <button data-tab="equipo" class="tab active">Equipo</button>
+    <button data-tab="liga" class="tab">Liga</button>
+    <button data-tab="jornada" class="tab">Jornada</button>
+  </nav>
+
+  <section id="tab-equipo" class="tab-panel"></section>
+  <section id="tab-liga" class="tab-panel" style="display:none;"></section>
+  <section id="tab-jornada" class="tab-panel" style="display:none;"></section>
+</div>
   <div id="screen-intro" style="display:none;"></div>
   <div id="screen-match" style="display:none;"></div>
 
   <script type="module" src="js/ui.js"></script>
 </body>
 </html>
+
 
