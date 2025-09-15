@@ -634,35 +634,31 @@ function renderTabJornada(){
   }
 
   btn.onclick = ()=>{
-    if(!mi){ alert("¡Liga terminada!"); return; }
+  if(!mi){ alert("¡Liga terminada!"); return; }
 
-    // Recalcula power del usuario según plantilla
-    const myRoster = career.plantilla.map(id => jugadoresPool.find(j=>j.id===id)).filter(Boolean);
-    const myPower = teamPowerFromRoster(myRoster);
-    setUserPower(career.league, myPower);
+  // Recalcula power del usuario según plantilla
+  const myRoster = career.plantilla.map(id => jugadoresPool.find(j=>j.id===id)).filter(Boolean);
+  const myPower = teamPowerFromRoster(myRoster);
+  setUserPower(career.league, myPower);
 
-    // Construye equipos de tu partido
-    const soyLocal = (mi.home === career.teamName);
-    const equipoT = { nombre: mi.home, moral: 7, local: true,  jugadores: soyLocal ? myRoster : sampleRivalSquad() };
-    const equipoR = { nombre: mi.away, moral: 5, local: false, jugadores: soyLocal ? sampleRivalSquad() : myRoster };
+  const soyLocal = (mi.home === career.teamName);
+  const equipoT = { nombre: mi.home, moral: 7, local: true,  jugadores: soyLocal ? myRoster : sampleRivalSquad() };
+  const equipoR = { nombre: mi.away, moral: 5, local: false, jugadores: soyLocal ? sampleRivalSquad() : myRoster };
 
-    // Juega tu partido con el motor
-    const res = simularPartido(equipoT, equipoR, { N: 12, eventsDeck: DEFAULT_EVENTS });
-    updateTable(career.league, mi.home, mi.away, res.score);
-
-    // Simula el resto de partidos de la jornada (IA vs IA)
-    simulateAIRound(career.league, matches);
-
-    // Avanza jornada
-    career.league.jornada++;
-
-    // Modal con log
-    showMatchLogModal(mi.home, mi.away, res);
-
-    // Refrescar pestañas actuales (liga y jornada)
-    renderTabLiga();
-    renderTabJornada();
-  };
+  // Abre visor secuencial; al terminar, actualizamos tabla y resto de la jornada
+  showMatchViewer({
+    homeTeam: equipoT,
+    awayTeam: equipoR,
+    opts: { N: 12 }, // puedes subir/bajar jugadas
+    onFinish: ({ score /*, log*/ })=>{
+      updateTable(career.league, mi.home, mi.away, score);
+      simulateAIRound(career.league, (career.league.fixtures||[]).filter(f => f.round === career.league.jornada));
+      career.league.jornada++;
+      renderTabLiga();
+      renderTabJornada();
+    }
+  });
+};
 
   function sampleRivalSquad(){
     const gk  = sampleForRole("GK", 1);
@@ -705,6 +701,7 @@ function showMatchLogModal(home, away, res){
 // SIEMPRE empezamos por la intro (como pediste)
 showScreen("screen-intro");
 renderIntro();
+
 
 
 
