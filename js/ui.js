@@ -14,6 +14,7 @@ import {
 } from './data.js';
 
 import { simularPartido, DEFAULT_EVENTS, teamPowerFromRoster } from './engine.js';
+import { showMatchViewer } from './ui_matchviewer.js';
 
 
 // --------- ESTADO GLOBAL ---------
@@ -701,6 +702,7 @@ function showMatchLogModal(home, away, res){
 // SIEMPRE empezamos por la intro (como pediste)
 showScreen("screen-intro");
 renderIntro();
+
 
 
 
