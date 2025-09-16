@@ -71,14 +71,14 @@ export const STEP_EVENTS = {
   corazón: {
     chance: 0.10,
     apply(s, side, log){
-      s.modifiers[side]..def -= 0.12; // permanente
+      s.modifiers[side].def -= 0.12; // permanente
       log.push(`🦊 (${side === "local" ? "LOCAL":"VIS"}) se llevan a tu jugador en camilla por una taquicardia grave, aún así no suelta el cubata`);
     }
   },
   desintoxicacion: {
     chance: 0.10,
     apply(s, side, log){
-      s.modifiers[side]..def += 0.12; // permanente
+      s.modifiers[side].def += 0.12; // permanente
       log.push(`🦊 (${side === "local" ? "LOCAL":"VIS"}) Tu defensa no ha podido salir de fiesta porque no tenía dinero, nunca lo habías visto tan concentrado, parece beckenbauer`);
     }
   },
