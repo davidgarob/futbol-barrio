@@ -29,14 +29,14 @@ export const STEP_EVENTS = {
     chance: 0.10,
     apply(s, side, log){
       s.modifiers[side].def -= 0.12; // permanente
-      log.push(`🚨 (${side === "local" ? "LOCAL":"VIS"}) La poli se lleva a un defensa (−DEF)`);
+      log.push(`🚨 (${side === "local" ? "LOCAL":"VIS"}) La policia entra en el campo y se lleva a tu defensa porque no se ha presentado en comisaria (−DEF)`);
     }
   },
   resacoso: {
     chance: 0.15,
     apply(s, side, log){
       s.modifiers[side].convNext -= 0.12; // para la próxima ocasión
-      log.push(`🥴 (${side === "local" ? "LOCAL":"VIS"}) Resacoso: próxima ocasión con menos puntería`);
+      log.push(`🥴 (${side === "local" ? "LOCAL":"VIS"}) Tu delantero se ha presentado al partído con una resaca terrible, no es capaz de dar al balón`);
     }
   },
   felino: {
@@ -44,14 +44,42 @@ export const STEP_EVENTS = {
     apply(s, side, log){
       const other = side === "local" ? "visitante" : "local";
       s.modifiers[other].convNext -= 0.10;
-      log.push(`🐈 (${side === "local" ? "LOCAL":"VIS"}) Portero felino: la próxima del rival costará`);
+      log.push(`🐈 (${side === "local" ? "LOCAL":"VIS"}) Tu portero está a tope de anfetas y le dan unos reflejos felinos`);
     }
   },
   zorro: {
     chance: 0.10,
     apply(s, side, log){
       s.modifiers[side].convNext += 0.10;
-      log.push(`🦊 (${side === "local" ? "LOCAL":"VIS"}) Pillería: próxima ocasión más clara`);
+      log.push(`🦊 (${side === "local" ? "LOCAL":"VIS"}) Tu delantero le ha pedido un mechero a su rival y aprovecha para regatearle`);
+    }
+  },
+  ex: {
+    chance: 0.10,
+    apply(s, side, log){
+      s.modifiers[side].convNext -= 0.10;
+      log.push(`🦊 (${side === "local" ? "LOCAL":"VIS"}) Tu delantero se esconde detrás del arbitro porque ha venido su ex a pedirle la manutención`);
+    }
+  },
+  promesa: {
+    chance: 0.10,
+    apply(s, side, log){
+      s.modifiers[side].convNext += 0.25;
+      log.push(`🦊 (${side === "local" ? "LOCAL":"VIS"}) Tus jugadores te han oido decir que si ganan les invitas a una fiesta con drogas y prostitutas, nunca los habías visto tan motivados`);
+    }
+  },
+  corazón: {
+    chance: 0.10,
+    apply(s, side, log){
+      s.modifiers[side]..def -= 0.12; // permanente
+      log.push(`🦊 (${side === "local" ? "LOCAL":"VIS"}) se llevan a tu jugador en camilla por una taquicardia grave, aún así no suelta el cubata`);
+    }
+  },
+  desintoxicacion: {
+    chance: 0.10,
+    apply(s, side, log){
+      s.modifiers[side]..def += 0.12; // permanente
+      log.push(`🦊 (${side === "local" ? "LOCAL":"VIS"}) Tu defensa no ha podido salir de fiesta porque no tenía dinero, nunca lo habías visto tan concentrado, parece beckenbauer`);
     }
   },
 };
