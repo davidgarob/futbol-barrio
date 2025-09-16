@@ -67,6 +67,15 @@ export const AUTO_EVENTS = {
       log.push(`🚨 (${tag}) La policía aparece y se lleva a tu defensa, dicen que no se qué de una estafa piramidal`);
     }
   },
+  etilico: {
+    chance: 0.10, // 10% de saltar una vez (seed)
+    apply(state, side, log){
+      // side = "local" | "visitante" => baja defensa resto de partido
+      const tag = side === "local" ? "LOCAL" : "VIS";
+      state.modifiers[side].def -= 0.12; // -12% defensa
+      log.push(`🚨 (${tag}) A tu defensa le acaba de dar un coma etilico!`);
+    }
+  },
   resacoso: {
     chance: 0.15,
     apply(state, side, log){
@@ -91,7 +100,25 @@ export const AUTO_EVENTS = {
       // próxima ocasión propia con +conv
       state.modifiers[side].convNext += 0.10;
       const tag = side === "local" ? "LOCAL" : "VIS";
-      log.push(`🦊 (${tag}) Pillería: próxima ocasión con más picardía`);
+      log.push(`🦊 (${tag}) Tu delantero le ha pedido un mechero al defensa y aprovecha para regatearle`);
+    }
+  },
+  apuesta: {
+    chance: 0.10,
+    apply(state, side, log){
+      // próxima ocasión propia con +conv
+      state.modifiers[side].convNext += 0.20;
+      const tag = side === "local" ? "LOCAL" : "VIS";
+      log.push(`🦊 (${tag}) Una persona de la afición le ha dicho `);
+    }
+  },
+  La_vane: {
+    chance: 0.10,
+    apply(state, side, log){
+      // próxima ocasión propia con +conv
+      state.modifiers[side].convNext -= 0.20;
+      const tag = side === "local" ? "LOCAL" : "VIS";
+      log.push(`🦊 (${tag}) La vane ha venido a pedirle a tu mediocentro que le pase la manutención, tu jugador se esconde durante un rato`);
     }
   },
 };
@@ -202,6 +229,7 @@ function probConversion(forLocal, rL, rV, state){
 
   return clamp(base + adjGK + bonus, 0.06, 0.52);
 }
+
 
 
 
