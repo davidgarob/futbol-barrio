@@ -125,6 +125,27 @@ export function nextPlay(state){
   const atacanLocal = Math.random() < (pL / (pL + pV));
   const tag = atacanLocal ? "LOCAL" : "VIS";
 
+  if (!state._decisionFired && state.i === Math.ceil(state.N/2)) {
+  state._decisionFired = true;
+  const side = "local"; // puedes alternar según marcador si quieres
+  const maybeChoice = buildChoice(
+    "mafia",
+    side,
+    "Llamada sospechosa en el descanso",
+    "Te insinúan que te dejes empatar. ¿Qué haces?",
+    [
+      { id: "aceptar_mafia",   label: "Aceptar (un favor es un favor)" },
+      { id: "rechazar_mafia", label: "Rechazar (somos íntegros)" }
+    ]
+  );
+  // Devolvemos la jugada “en seco” para que la UI pause y pregunte
+  return {
+    line: `⏸️ Pausa por decisión del banquillo…`,
+    score: {...state.score},
+    finished: false,
+    maybeChoice
+  };
+}
   let line = `▶️ Jugada ${i}: ataca ${tag}`;
   // ¿Ocasión?
   const pO = atacanLocal ? pL : pV;
@@ -157,6 +178,41 @@ export function nextPlay(state){
 export function applyChoice(state, choiceId){
   // Placeholder para Sprint E (decisiones)
   // Por ahora no usamos choices; esta función existe para mantener API
+  function buildChoice(id, side, title, desc, options){
+  return { id, side, title, desc, options };
+}
+
+// === Export: aplicar decisión elegida
+export function applyChoice(state, choiceId, payload){
+  // payload contiene { id, side } por si necesitas saber quién decide
+  const side = payload?.side || "local";
+  switch(choiceId){
+    case "aceptar_mafia":
+      // te dejas: favoreces al rival en la próxima ocasión y bajas DEF todo el partido
+      state.modifiers[side].def -= 0.10; // -DEF permanente suave
+      const other = (side === "local") ? "visitante" : "local";
+      state.modifiers[other].convNext += 0.12; // +conv rival en la próxima
+      state.log.push(`💼 (${side === "local" ? "LOCAL":"VIS"}) Aceptas el “favorcete” de la mafia… el rival huele sangre`);
+      break;
+
+    case "rechazar_mafia":
+      // no te dejas: árbitro “duro” contigo una vez
+      state.modifiers[side].convNext -= 0.06; // tu próxima ocasión, un poco peor
+      state.log.push(`🧰 (${side === "local" ? "LOCAL":"VIS"}) Rechazas el trato. El árbitro te mira mal…`);
+      break;
+
+    case "juego_directo_on":
+      state.modifiers[side].convNext += 0.08; // próxima ocasión un poco mejor
+      state.modifiers[side].def -= 0.06;      // te desguarneces atrás
+      state.log.push(`🎯 (${side === "local" ? "LOCAL":"VIS"}) Cambias a juego directo: más mordiente, menos abrigo atrás`);
+      break;
+
+    case "juego_directo_off":
+      state.log.push(`🧠 (${side === "local" ? "LOCAL":"VIS"}) Mantienes el plan inicial`);
+      break;
+  }
+  return state;
+}
   return state;
 }
 
