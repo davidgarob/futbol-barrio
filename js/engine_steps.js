@@ -23,20 +23,20 @@ function ratingEquipoFromRoster(jugadores){
   return { A, D, GK };
 }
 
-// ===== Eventos automáticos básicos (mismo espíritu que engine.js) =====
+// ===== Eventos automáticos básicos =====
 export const STEP_EVENTS = {
   condicional: {
     chance: 0.10,
     apply(s, side, log){
       s.modifiers[side].def -= 0.12; // permanente
-      log.push(`🚨 (${side === "local" ? "LOCAL":"VIS"}) La policia entra en el campo y se lleva a tu defensa porque no se ha presentado en comisaria (−DEF)`);
+      log.push(`🚨 (${side === "local" ? "LOCAL":"VIS"}) La policía se lleva a un defensa (−DEF)`);
     }
   },
   resacoso: {
     chance: 0.15,
     apply(s, side, log){
-      s.modifiers[side].convNext -= 0.12; // para la próxima ocasión
-      log.push(`🥴 (${side === "local" ? "LOCAL":"VIS"}) Tu delantero se ha presentado al partído con una resaca terrible, no es capaz de dar al balón`);
+      s.modifiers[side].convNext -= 0.12; // próxima ocasión
+      log.push(`🥴 (${side === "local" ? "LOCAL":"VIS"}) Resacoso: próxima ocasión con menos puntería`);
     }
   },
   felino: {
@@ -44,45 +44,52 @@ export const STEP_EVENTS = {
     apply(s, side, log){
       const other = side === "local" ? "visitante" : "local";
       s.modifiers[other].convNext -= 0.10;
-      log.push(`🐈 (${side === "local" ? "LOCAL":"VIS"}) Tu portero está a tope de anfetas y le dan unos reflejos felinos`);
+      log.push(`🐈 (${side === "local" ? "LOCAL":"VIS"}) Portero felino: la próxima del rival costará`);
     }
   },
   zorro: {
     chance: 0.10,
     apply(s, side, log){
       s.modifiers[side].convNext += 0.10;
-      log.push(`🦊 (${side === "local" ? "LOCAL":"VIS"}) Tu delantero le ha pedido un mechero a su rival y aprovecha para regatearle`);
+      log.push(`🦊 (${side === "local" ? "LOCAL":"VIS"}) Pillería: próxima ocasión más clara`);
     }
   },
+
+  // ——— Ejemplos añadidos por ti (ajustados) ———
   ex: {
     chance: 0.10,
     apply(s, side, log){
       s.modifiers[side].convNext -= 0.10;
-      log.push(`🦊 (${side === "local" ? "LOCAL":"VIS"}) Tu delantero se esconde detrás del arbitro porque ha venido su ex a pedirle la manutención`);
+      log.push(`📱 (${side === "local" ? "LOCAL":"VIS"}) Aparece el/la ex en la grada: nervios y menos puntería en la próxima`);
     }
   },
   promesa: {
     chance: 0.10,
     apply(s, side, log){
-      s.modifiers[side].convNext += 0.25;
-      log.push(`🦊 (${side === "local" ? "LOCAL":"VIS"}) Tus jugadores te han oido decir que si ganan les invitas a una fiesta con drogas y prostitutas, nunca los habías visto tan motivados`);
+      s.modifiers[side].convNext += 0.15;
+      log.push(`🔥 (${side === "local" ? "LOCAL":"VIS"}) Promesa en la charla: motivación extra para la próxima ocasión`);
     }
   },
-  corazón: {
+  corazon: {
     chance: 0.10,
     apply(s, side, log){
-      s.modifiers[side].def -= 0.12; // permanente
-      log.push(`🦊 (${side === "local" ? "LOCAL":"VIS"}) se llevan a tu jugador en camilla por una taquicardia grave, aún así no suelta el cubata`);
+      s.modifiers[side].def -= 0.12;
+      log.push(`❤️ (${side === "local" ? "LOCAL":"VIS"}) Sustito: baja la solidez atrás (−DEF)`);
     }
   },
   desintoxicacion: {
     chance: 0.10,
     apply(s, side, log){
-      s.modifiers[side].def += 0.12; // permanente
-      log.push(`🦊 (${side === "local" ? "LOCAL":"VIS"}) Tu defensa no ha podido salir de fiesta porque no tenía dinero, nunca lo habías visto tan concentrado, parece beckenbauer`);
+      s.modifiers[side].def += 0.12;
+      log.push(`🧘 (${side === "local" ? "LOCAL":"VIS"}) Día centrado: la zaga está más sobria y atenta (+DEF)`);
     }
   },
 };
+
+// ===== Helper para decisiones =====
+function buildChoice(id, side, title, desc, options){
+  return { id, side, title, desc, options };
+}
 
 // ===== API =====
 export function startMatch(teamLocal, teamVisitante, opts){
@@ -94,18 +101,20 @@ export function startMatch(teamLocal, teamVisitante, opts){
 
   const state = {
     N,
-    i: 0, // jugada actual (0..N)
+    i: 0,
     teamL: teamLocal,
     teamV: teamVisitante,
     ratings: { L:rL, V:rV },
     score: { home:0, away:0 },
     modifiers: { local:{def:0, convNext:0}, visitante:{def:0, convNext:0} },
-    log: [`📊 Ratings — LOCAL A:${rL.A.toFixed(1)} D:${rL.D.toFixed(1)} GK:${rL.GK.toFixed(1)} | VIS A:${rV.A.toFixed(1)} D:${rV.D.toFixed(1)} GK:${rV.GK.toFixed(1)}`],
+    log: [
+      `📊 Ratings — LOCAL A:${rL.A.toFixed(1)} D:${rL.D.toFixed(1)} GK:${rL.GK.toFixed(1)} | ` +
+      `VIS A:${rV.A.toFixed(1)} D:${rV.D.toFixed(1)} GK:${rV.GK.toFixed(1)}`
+    ],
     finished: false,
     deck
   };
 
-  // Sembrar 0–2 eventos por equipo
   seedAutoEvents(state);
   return state;
 }
@@ -117,6 +126,28 @@ export function nextPlay(state){
   const i = state.i;
   const { L:rL, V:rV } = state.ratings;
 
+  // —— Disparador de decisión DEMO a mitad del partido ——
+  if (!state._decisionFired && state.i === Math.ceil(state.N/2)) {
+    state._decisionFired = true;
+    const side = "local";
+    const maybeChoice = buildChoice(
+      "mafia",
+      side,
+      "Llamada sospechosa en el descanso",
+      "Te insinúan que te dejes empatar. ¿Qué haces?",
+      [
+        { id: "aceptar_mafia",   label: "Aceptar (un favor es un favor)" },
+        { id: "rechazar_mafia", label: "Rechazar (somos íntegros)" }
+      ]
+    );
+    return {
+      line: `⏸️ Pausa por decisión del banquillo…`,
+      score: {...state.score},
+      finished: false,
+      maybeChoice
+    };
+  }
+
   // Ocasiones
   const defL = clamp(rL.D + (state.modifiers.local.def*20), 2, 24);
   const defV = clamp(rV.D + (state.modifiers.visitante.def*20), 2, 24);
@@ -125,29 +156,7 @@ export function nextPlay(state){
   const atacanLocal = Math.random() < (pL / (pL + pV));
   const tag = atacanLocal ? "LOCAL" : "VIS";
 
-  if (!state._decisionFired && state.i === Math.ceil(state.N/2)) {
-  state._decisionFired = true;
-  const side = "local"; // puedes alternar según marcador si quieres
-  const maybeChoice = buildChoice(
-    "mafia",
-    side,
-    "Llamada sospechosa en el descanso",
-    "Te insinúan que te dejes empatar. ¿Qué haces?",
-    [
-      { id: "aceptar_mafia",   label: "Aceptar (un favor es un favor)" },
-      { id: "rechazar_mafia", label: "Rechazar (somos íntegros)" }
-    ]
-  );
-  // Devolvemos la jugada “en seco” para que la UI pause y pregunte
-  return {
-    line: `⏸️ Pausa por decisión del banquillo…`,
-    score: {...state.score},
-    finished: false,
-    maybeChoice
-  };
-}
   let line = `▶️ Jugada ${i}: ataca ${tag}`;
-  // ¿Ocasión?
   const pO = atacanLocal ? pL : pV;
   if (Math.random() < pO){
     const pC = probConversion(atacanLocal, state);
@@ -171,48 +180,37 @@ export function nextPlay(state){
     line,
     score: {...state.score},
     finished: state.finished,
-    maybeChoice: null // reservado para futuros eventos con decisión
+    maybeChoice: null
   };
 }
 
-export function applyChoice(state, choiceId){
-  // Placeholder para Sprint E (decisiones)
-  // Por ahora no usamos choices; esta función existe para mantener API
-  function buildChoice(id, side, title, desc, options){
-  return { id, side, title, desc, options };
-}
-
-// === Export: aplicar decisión elegida
+// === Aplicar decisión elegida (ÚNICA definición) ===
 export function applyChoice(state, choiceId, payload){
-  // payload contiene { id, side } por si necesitas saber quién decide
   const side = payload?.side || "local";
   switch(choiceId){
-    case "aceptar_mafia":
-      // te dejas: favoreces al rival en la próxima ocasión y bajas DEF todo el partido
-      state.modifiers[side].def -= 0.10; // -DEF permanente suave
+    case "aceptar_mafia": {
+      state.modifiers[side].def -= 0.10;
       const other = (side === "local") ? "visitante" : "local";
-      state.modifiers[other].convNext += 0.12; // +conv rival en la próxima
-      state.log.push(`💼 (${side === "local" ? "LOCAL":"VIS"}) Aceptas el “favorcete” de la mafia… el rival huele sangre`);
+      state.modifiers[other].convNext += 0.12;
+      state.log.push(`💼 (${side === "local" ? "LOCAL":"VIS"}) Aceptas el trato… el rival huele sangre`);
       break;
-
-    case "rechazar_mafia":
-      // no te dejas: árbitro “duro” contigo una vez
-      state.modifiers[side].convNext -= 0.06; // tu próxima ocasión, un poco peor
+    }
+    case "rechazar_mafia": {
+      state.modifiers[side].convNext -= 0.06;
       state.log.push(`🧰 (${side === "local" ? "LOCAL":"VIS"}) Rechazas el trato. El árbitro te mira mal…`);
       break;
-
-    case "juego_directo_on":
-      state.modifiers[side].convNext += 0.08; // próxima ocasión un poco mejor
-      state.modifiers[side].def -= 0.06;      // te desguarneces atrás
+    }
+    case "juego_directo_on": {
+      state.modifiers[side].convNext += 0.08;
+      state.modifiers[side].def -= 0.06;
       state.log.push(`🎯 (${side === "local" ? "LOCAL":"VIS"}) Cambias a juego directo: más mordiente, menos abrigo atrás`);
       break;
-
-    case "juego_directo_off":
+    }
+    case "juego_directo_off": {
       state.log.push(`🧠 (${side === "local" ? "LOCAL":"VIS"}) Mantienes el plan inicial`);
       break;
+    }
   }
-  return state;
-}
   return state;
 }
 
