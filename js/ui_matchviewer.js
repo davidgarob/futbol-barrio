@@ -1,6 +1,6 @@
 // js/ui_matchviewer.js — Visor secuencial con Play/Pause/Speed
 
-import { startMatch, nextPlay } from './engine_steps.js';
+import { startMatch, nextPlay, applyChoice } from './engine_steps.js';
 
 export function showMatchViewer({ homeTeam, awayTeam, opts, onFinish }){
   let state = startMatch(homeTeam, awayTeam, opts);
@@ -20,6 +20,19 @@ export function showMatchViewer({ homeTeam, awayTeam, opts, onFinish }){
 
   function step(){
     const res = nextPlay(state);
+    if (res.maybeChoice) {
+  stop();
+  showChoiceModal(res.maybeChoice, (optionId)=>{
+    // aplicar efectos
+    applyChoice(state, optionId, res.maybeChoice);
+    // mostrar en el log que hubo una decisión
+    appendLine($log, `🗳️ Decisión: ${optionId}`);
+    autoscroll($log);
+    // reanudar reproducción
+    play();
+  });
+  return; // no seguimos con esta iteración
+}
     appendLine($log, res.line);
     $score.textContent = `${res.score.home} - ${res.score.away}`;
     autoscroll($log);
@@ -113,3 +126,35 @@ function appendLine(container, text){
 function autoscroll(container){
   container.scrollTop = container.scrollHeight;
 }
+function showChoiceModal(choice, onPick){
+  let m = document.getElementById("mv-choice");
+  if(!m){
+    m = document.createElement("div");
+    m.id = "mv-choice";
+    m.style = "position:fixed; inset:0; background:rgba(0,0,0,.45); display:flex; align-items:center; justify-content:center; z-index:100000;";
+    document.body.appendChild(m);
+  }
+  const optsHTML = choice.options.map(o => 
+    `<button class="opt" data-id="${o.id}" style="padding:8px 12px; border-radius:10px; border:1px solid #cfd8ff; background:#f6f8ff; cursor:pointer;">${o.label}</button>`
+  ).join("");
+
+  m.innerHTML = `
+    <div style="background:#fff; width:min(560px,90vw); border-radius:14px; box-shadow:0 20px 60px rgba(0,0,0,.25);">
+      <div style="padding:12px 16px; border-bottom:1px solid #eee; font-weight:700;">${choice.title}</div>
+      <div style="padding:12px 16px; line-height:1.5;">${choice.desc}</div>
+      <div style="padding:12px 16px; display:flex; gap:10px; justify-content:flex-end; border-top:1px solid #f1f5f9;">
+        ${optsHTML}
+      </div>
+    </div>
+  `;
+
+  m.querySelectorAll(".opt").forEach(btn=>{
+    btn.onclick = ()=>{
+      const id = btn.getAttribute("data-id");
+      m.remove();
+      if(typeof onPick === "function") onPick(id);
+    };
+  });
+  m.onclick = (e)=>{ if(e.target === m){ /* no cerrar al fondo */ } };
+}
+
